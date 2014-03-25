@@ -1,32 +1,17 @@
-#include <pthread.h>
+#include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 
-#define NUM_THREADS 6
+#include "monte_carlo.h"
 
-void* printHello(void* threadid) {
-    int id = *((int*) threadid);
-    printf("\n%d: Hello World!\n", id);
-    pthread_exit(NULL);
-}
+#define MONTE_CARLO_IT1 1000
+#define MONTE_CARLO_IT2 1000000
 
 int main(int argc, const char* argv[]) {
-    pthread_t threads[NUM_THREADS];
-    int rc, t;
-
-    for (t=0; t<NUM_THREADS; t++) {
-        printf("Creating thread %d\n", t);
-        rc = pthread_create(&threads[t], NULL, printHello, (void*) &t);
-        if (rc) {
-            printf("ERROR return code from pthread_create(): %d\n", rc);
-            exit(-1);
-        }
-    }
-
-    /* wait for threads to exit */
-    for (t=0; t<NUM_THREADS; t++) {
-        pthread_join(threads[t], NULL);
-    }
+    printf("Actual pi: %.9f\n", acos(-1.0));
+    printf("Monte carlo with %d iterations: %.9f\n", MONTE_CARLO_IT1,
+           monteCarloPi(MONTE_CARLO_IT1));
+    printf("Monte carlo with %d iterations: %.9f\n", MONTE_CARLO_IT2,
+           monteCarloPi(MONTE_CARLO_IT2));
 
     return 0;
 }

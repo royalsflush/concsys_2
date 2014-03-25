@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = --ansi --pedantic -Wall -Wshadow
-SRC = pi.c
+SRC = monte_carlo.c monte_carlo.h pi.c
 OUT = pi
 
-all:
+all: $(SRC)
 	$(CC) $(CFLAGS) $(SRC) -o $(OUT)
