@@ -38,7 +38,6 @@ double monteCarloPi(int num_iterations) {
         sum_t[t] = 0.0;
 
     for (t=0; t<NUM_THREADS; t++) {
-        printf("Creating thread %d\n", t);
         thread_info[0] = t;
         rc = pthread_create(&threads[t], NULL, shootTarget,
                             (void*) thread_info);
