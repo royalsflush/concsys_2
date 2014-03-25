@@ -57,3 +57,16 @@ double monteCarloPi(int num_iterations) {
 
     return 4*pi;
 }
+
+double seqMonteCarloPi(int num_iterations) {
+    int i, sum=0;
+    srand(time(NULL));
+
+    for (i=0; i<num_iterations*NUM_THREADS; i++) {
+        double x = (double) rand()/RAND_MAX;
+        double y = (double) rand()/RAND_MAX;
+        if (x*x + y*y <= 1.) sum++;
+    }
+
+    return (double) (4*sum)/(num_iterations*NUM_THREADS);
+}
