@@ -47,7 +47,6 @@ double monteCarloPi(int num_iterations) {
         }
     }
 
-    /* wait for threads to exit */
     for (t=0; t<NUM_THREADS; t++)
         pthread_join(threads[t], NULL);
 
