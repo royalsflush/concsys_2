@@ -17,11 +17,23 @@ int                     dataPresent=0;
 int                     sharedData=0;
 
 /* Add ons to the original program */
-#define CONSUMER_SLEEP 3
+/* Overflow test
+#define CONSUMER_SLEEP 5
 #define PRODUCER_SLEEP 1
+#define BUFFER_UPPERBOUND 10
+*/
+
+/* Underflow test */
+#define CONSUMER_SLEEP 1
+#define PRODUCER_SLEEP 2
+#define BUFFER_UPPERBOUND 10
 
 int producer_active = 1;
 int consumed_data[NUMTHREADS];
+
+int buffer_full = 0;
+pthread_mutex_t buffer_full_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  buffer_full_changed = PTHREAD_COND_INITIALIZER;
 
 void secure_lock(pthread_mutex_t* mutex) {
     int rc = pthread_mutex_lock(mutex);
@@ -82,6 +94,20 @@ void *theThread(void *threadid) {
         /* We consumed the last of the data */
         if (sharedData==0) {dataPresent=0;}
         secure_unlock(&state_vars_mutex);
+
+        /* If buffer was full, now it's not, since we just consumed data */
+        secure_lock(&buffer_full_mutex);
+        buffer_full = 0;
+
+        rc = pthread_cond_signal(&buffer_full_changed); /* wake up producer */
+        if (rc) {
+            pthread_mutex_unlock(&buffer_full_mutex);
+            printf("Producer: Failed to wake up producer, rc=%d\n", rc);
+            exit(1);
+        }
+        secure_unlock(&buffer_full_mutex);
+
+        /* Finally, consume the data that we got from buffer */
         sleep(CONSUMER_SLEEP);
 
         /* Repeat holding the lock. pthread_cond_wait releases it atomically */
@@ -98,8 +124,10 @@ int main(int argc, char **argv)
     int                   rc=0;
     int                   amountOfData=50;
     int                   i;
+    clock_t start;
 
     printf("Enter Testcase - %s\n", argv[0]);
+    start = clock();
 
     printf("Create/start threads\n");
     for (i=0; i <NUMTHREADS; ++i) {
@@ -115,11 +143,28 @@ int main(int argc, char **argv)
     while (amountOfData--) {
         printf("Producer: 'Finding' data - amount remaining: %d\n",
                amountOfData);
+
+        secure_lock(&buffer_full_mutex);
+        while (buffer_full) {
+            rc = pthread_cond_wait(&buffer_full_changed, &buffer_full_mutex);
+
+            if (rc) {
+                printf("Producer: condwait failed, rc=%d\n", rc);
+                pthread_mutex_unlock(&buffer_full_mutex);
+                exit(2);
+            }
+        }
         sleep(PRODUCER_SLEEP);
 
         secure_lock(&state_vars_mutex);   /* Protect shared data and flag  */
         printf("Producer: Make data shared and notify consumer\n");
         ++sharedData;                          /* Add data  */
+
+        if (sharedData == BUFFER_UPPERBOUND)
+            buffer_full = 1;
+
+        secure_unlock(&buffer_full_mutex);
+
         printf("sharedData: %d\n", sharedData);
         dataPresent=1;                         /* Set boolean predicate  */
 
@@ -162,5 +207,6 @@ int main(int argc, char **argv)
     rc = pthread_mutex_destroy(&state_vars_mutex);
     rc = pthread_cond_destroy(&state_changed);
     printf("Main completed\n");
+    printf("CPU time: %f\n", (double)(clock()-start)/CLOCKS_PER_SEC);
     return 0;
 }
