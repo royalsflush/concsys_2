@@ -1,3 +1,3 @@
 # Ignore executables.
-./sample
-./cond_vars
+sample
+cond_vars
