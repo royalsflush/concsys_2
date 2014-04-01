@@ -21,5 +21,6 @@ void PrintCurrentJob(Printer* p) {
     }
     p->current_job = NO_JOB;
     SecureUnlock(&p->job_mutex);
-}
 
+    AddPrinterToEnd(p->semaphore, p);
+}
