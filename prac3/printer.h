@@ -6,6 +6,7 @@
 struct printer;
 struct semaphore;
 
+/* A comment! */
 void InitPrinter(struct printer* p, struct semaphore* s);
 void PrintCurrentJob(struct printer* p);
 
